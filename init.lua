@@ -103,6 +103,28 @@ vim.opt.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
 -- vim.opt.relativenumber = true
+-- 在 normal 模式使用相对行号和绝对行号混合，在 insert 模式使用绝对行号
+local numbertoggle_augroup = vim.api.nvim_create_augroup('numbertoggle', { clear = false })
+
+vim.api.nvim_create_autocmd({ 'BufEnter', 'FocusGained', 'InsertLeave', 'WinEnter' }, {
+  desc = '在 normal 模式使用相对行号和绝对行号混合，在 insert 模式使用绝对行号',
+  group = numbertoggle_augroup,
+  callback = function()
+    if vim.opt.number and vim.fn.mode() ~= 'i' then
+      vim.opt.relativenumber = true
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd({ 'BufLeave', 'FocusLost', 'InsertEnter', 'WinLeave' }, {
+  desc = '在 insert 模式使用绝对行号',
+  group = numbertoggle_augroup,
+  callback = function()
+    if vim.opt.number then
+      vim.opt.relativenumber = false
+    end
+  end,
+})
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
