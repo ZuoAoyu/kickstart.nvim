@@ -715,6 +715,22 @@ require('lazy').setup({
       local servers = {
         cmake = {},
         clangd = {
+          on_attach = function(client, bufnr)
+            -- 获取当前文件类型
+            local ft = vim.bo[bufnr].filetype
+            local new_flags = { '--stdlib=libc++' }
+
+            if ft == 'c' then
+              table.insert(new_flags, '--std=c11')
+            elseif ft == 'cpp' then
+              table.insert(new_flags, '--std=c++23')
+            end
+
+            -- 动态修改 clangd 的 fallbackFlags
+            if client.config and client.config.init_options then
+              client.config.init_options.fallbackFlags = new_flags
+            end
+          end,
           init_options = {
             fallbackFlags = { '--std=c++23', '--stdlib=libc++' },
           },
@@ -1056,6 +1072,34 @@ require('lazy').setup({
     --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+  },
+  { -- 实现类似 vscode 的 Sticky Scroll。往下滚动代码时，当前函数或类的定义行会“固定”在顶部，方便你知道自己当前身处哪个作用域。
+    'nvim-treesitter/nvim-treesitter-context',
+    keys = {
+      {
+        '[c',
+        function()
+          require('treesitter-context').go_to_context(vim.v.count1)
+        end,
+        mode = '',
+        desc = 'Jumping to [C]ontext',
+      },
+    },
+    opts = {
+      enable = true, -- Enable this plugin (Can be enabled/disabled later via commands)
+      multiwindow = false, -- Enable multiwindow support.
+      max_lines = 0, -- How many lines the window should span. Values <= 0 mean no limit.
+      min_window_height = 0, -- Minimum editor window height to enable context. Values <= 0 mean no limit.
+      line_numbers = true,
+      multiline_threshold = 20, -- Maximum number of lines to show for a single context
+      trim_scope = 'outer', -- Which context lines to discard if `max_lines` is exceeded. Choices: 'inner', 'outer'
+      mode = 'cursor', -- Line used to calculate context. Choices: 'cursor', 'topline'
+      -- Separator between context and content. Should be a single character string, like '-'.
+      -- When separator is set, the context will only show up when there are at least 2 lines above cursorline.
+      separator = nil,
+      zindex = 20, -- The Z-index of the context window
+      on_attach = nil, -- (fun(buf: integer): boolean) return false to disable attaching
+    },
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
